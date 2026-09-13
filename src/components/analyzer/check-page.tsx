@@ -12,6 +12,7 @@ import {
   type Assessment,
   type InputKind,
 } from "@/lib/analyzer";
+import { saveScan } from "@/lib/history";
 import { cn } from "@/lib/utils";
 
 const EMPTY_APP: AppDetails = {
@@ -133,21 +134,30 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
     }
 
     const hosts = Array.from(
-      new Set(local.urls.map((u) => u.registrable || u.hostname).filter(Boolean)),
+      new Set(local.urls.map((u) => u.hostname).filter(Boolean)),
     ).slice(0, 2);
+    const urls = Array.from(new Set(local.urls.map((u) => u.href))).slice(0, 5);
 
     const intel =
       hosts.length > 0
-        ? await lookupIntel({ data: { hostnames: hosts } }).catch(() => null)
+        ? await lookupIntel({ data: { hostnames: hosts, urls } }).catch(() => null)
         : null;
     if (id !== runId.current) return;
+    let final = local;
     if (intel) {
-      setAssessment((current) => (current ? applyIntel(current, intel) : current));
+      final = applyIntel(local, intel);
+      setAssessment(final);
       if (intel.ok && intel.domains.length) {
-        setBriefingNote("Live registry, DNS, and malware-list lookups finished.");
+        const checked = intel.domains[0];
+        setBriefingNote(
+          checked?.safeBrowsing?.configured
+            ? "Checked against Google Safe Browsing, VirusTotal, the registry, DNS, and public phishing feeds."
+            : "Checked against VirusTotal, the registry, DNS, and public phishing feeds.",
+        );
       }
     }
     setIntelPending(false);
+    saveScan(final);
   }
 
   const alert =

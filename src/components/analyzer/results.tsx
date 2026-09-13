@@ -224,6 +224,42 @@ function LiveIntel({
             <p className="font-mono text-xs text-fg">{d.hostname}</p>
             <dl className="mt-2 grid gap-2 sm:grid-cols-3">
               <IntelFact
+                label="Google Safe Browsing"
+                value={
+                  !d.safeBrowsing
+                    ? "Not checked"
+                    : !d.safeBrowsing.configured
+                      ? "Key not set up yet"
+                      : !d.safeBrowsing.ok
+                        ? d.safeBrowsing.error ?? "Unavailable"
+                        : d.safeBrowsing.threats.length > 0
+                          ? `Listed for ${d.safeBrowsing.threats.join(", ")}`
+                          : "No listing"
+                }
+                warn={(d.safeBrowsing?.threats.length ?? 0) > 0}
+              />
+              <IntelFact
+                label="VirusTotal"
+                value={
+                  !d.virustotal
+                    ? "Not checked"
+                    : !d.virustotal.configured
+                      ? "Key not set up yet"
+                      : !d.virustotal.ok
+                        ? d.virustotal.error ?? "Unavailable"
+                        : d.virustotal.known === false
+                          ? "No analysis history"
+                          : `${d.virustotal.malicious ?? 0} malicious · ${
+                              d.virustotal.suspicious ?? 0
+                            } suspicious of ${d.virustotal.total ?? 0} engines`
+                }
+                warn={
+                  ((d.virustotal?.malicious ?? 0) +
+                    (d.virustotal?.suspicious ?? 0)) >
+                  0
+                }
+              />
+              <IntelFact
                 label="Registry"
                 value={
                   d.rdap.ok
@@ -258,14 +294,21 @@ function LiveIntel({
                     : d.dns.error ?? "Unavailable"
                 }
               />
+              {d.virustotal?.categories && d.virustotal.categories.length > 0 ? (
+                <IntelFact
+                  label="Category"
+                  value={d.virustotal.categories.join(", ")}
+                />
+              ) : null}
             </dl>
           </li>
         ))}
       </ul>
       <p className="mt-3 text-[11px] leading-relaxed text-subtle">
-        RDAP registry, Google Public DNS, sinking.yachts phishing feed, and
-        urlscan.io. These feeds can miss threats and can be delayed. They are
-        not a forensic verdict.
+        Google Safe Browsing, VirusTotal (70+ security vendors), RDAP registry,
+        Google Public DNS, the sinking.yachts phishing feed, and urlscan.io.
+        These feeds can miss brand-new threats and can be delayed. They are not
+        a forensic verdict.
       </p>
     </div>
   );

@@ -1,5 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import type { Assessment, DomainIntel, Indicator, RiskLevel } from "./types";
+import type {
+  Assessment,
+  DomainIntel,
+  Indicator,
+  RiskLevel,
+  SafeBrowsingIntel,
+  VirusTotalIntel,
+} from "./types";
 
 export type IntelResult =
   | { ok: true; domains: DomainIntel[]; indicators: Indicator[] }
@@ -160,9 +167,179 @@ async function lookupDns(
   return { ok: true, addresses };
 }
 
+const GSB_LABEL: Record<string, string> = {
+  MALWARE: "malware",
+  SOCIAL_ENGINEERING: "phishing / social engineering",
+  UNWANTED_SOFTWARE: "unwanted software",
+  POTENTIALLY_HARMFUL_APPLICATION: "harmful app",
+};
+
+async function lookupVirusTotal(
+  hostname: string,
+  signal: AbortSignal,
+): Promise<VirusTotalIntel> {
+  const key = process.env["VIRUSTOTAL_API_KEY"];
+  if (!key) return { ok: false, configured: false, error: "No API key" };
+  const res = await fetch(
+    `https://www.virustotal.com/api/v3/domains/${encodeURIComponent(hostname)}`,
+    { signal, headers: { "x-apikey": key, Accept: "application/json" } },
+  );
+  if (res.status === 404) {
+    return { ok: true, configured: true, known: false, total: 0 };
+  }
+  if (!res.ok) {
+    return {
+      ok: false,
+      configured: true,
+      error:
+        res.status === 401
+          ? "VirusTotal rejected the API key"
+          : res.status === 429
+            ? "VirusTotal rate limit reached"
+            : `VirusTotal ${res.status}`,
+    };
+  }
+  const body = (await res.json()) as {
+    data?: {
+      attributes?: {
+        last_analysis_stats?: Record<string, number>;
+        reputation?: number;
+        categories?: Record<string, string>;
+      };
+    };
+  };
+  const stats = body.data?.attributes?.last_analysis_stats ?? {};
+  const malicious = stats["malicious"] ?? 0;
+  const suspicious = stats["suspicious"] ?? 0;
+  const harmless = stats["harmless"] ?? 0;
+  const undetected = stats["undetected"] ?? 0;
+  const categories = Array.from(
+    new Set(Object.values(body.data?.attributes?.categories ?? {})),
+  ).slice(0, 4);
+  return {
+    ok: true,
+    configured: true,
+    known: true,
+    malicious,
+    suspicious,
+    harmless,
+    undetected,
+    total: malicious + suspicious + harmless + undetected,
+    reputation: body.data?.attributes?.reputation ?? null,
+    categories,
+  };
+}
+
+type SafeBrowsingBatch = {
+  ok: boolean;
+  configured: boolean;
+  matches: Record<string, string[]>;
+  error?: string | undefined;
+};
+
+async function lookupSafeBrowsing(
+  urls: string[],
+  signal: AbortSignal,
+): Promise<SafeBrowsingBatch> {
+  const key = process.env["GOOGLE_SAFE_BROWSING_API_KEY"];
+  if (!key) {
+    return { ok: false, configured: false, matches: {}, error: "No API key" };
+  }
+  const res = await fetch(
+    `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${encodeURIComponent(key)}`,
+    {
+      method: "POST",
+      signal,
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        client: { clientId: "sentinel-scanner", clientVersion: "1.0.0" },
+        threatInfo: {
+          threatTypes: [
+            "MALWARE",
+            "SOCIAL_ENGINEERING",
+            "UNWANTED_SOFTWARE",
+            "POTENTIALLY_HARMFUL_APPLICATION",
+          ],
+          platformTypes: ["ANY_PLATFORM"],
+          threatEntryTypes: ["URL"],
+          threatEntries: urls.map((url) => ({ url })),
+        },
+      }),
+    },
+  );
+  if (!res.ok) {
+    return {
+      ok: false,
+      configured: true,
+      matches: {},
+      error:
+        res.status === 400 || res.status === 403
+          ? "Google rejected the Safe Browsing key"
+          : `Safe Browsing ${res.status}`,
+    };
+  }
+  const body = (await res.json()) as {
+    matches?: { threatType?: string; threat?: { url?: string } }[];
+  };
+  const matches: Record<string, string[]> = {};
+  for (const m of body.matches ?? []) {
+    const raw = m.threat?.url ?? "";
+    let host = "";
+    try {
+      host = new URL(raw.includes("://") ? raw : `http://${raw}`).hostname;
+    } catch {
+      host = raw;
+    }
+    const label = GSB_LABEL[m.threatType ?? ""] ?? (m.threatType ?? "threat");
+    for (const key of new Set([host, host.replace(/^www\./, "")])) {
+      const list = matches[key] ?? [];
+      if (!list.includes(label)) list.push(label);
+      matches[key] = list;
+    }
+  }
+  return { ok: true, configured: true, matches };
+}
+
 function indicatorsFrom(domains: DomainIntel[]): Indicator[] {
   const out: Indicator[] = [];
   for (const d of domains) {
+    const sbThreats = d.safeBrowsing?.threats ?? [];
+    if (sbThreats.length > 0) {
+      out.push({
+        id: `gsb-${d.hostname}`,
+        severity: "high",
+        weight: 45,
+        title: `Google Safe Browsing flags ${d.hostname}`,
+        detail: `Google lists this address for ${sbThreats.join(", ")}. Close the page. Do not enter anything on it, and do not install anything it offers.`,
+        category: "phishing",
+      });
+    }
+    const vt = d.virustotal;
+    if (vt?.ok && (vt.malicious ?? 0) + (vt.suspicious ?? 0) > 0) {
+      const bad = (vt.malicious ?? 0) + (vt.suspicious ?? 0);
+      out.push({
+        id: `vt-${d.hostname}`,
+        severity: bad >= 3 ? "high" : "medium",
+        weight: bad >= 3 ? 40 : 20,
+        title: `${bad} security vendor${bad === 1 ? "" : "s"} flag ${d.hostname}`,
+        detail: `VirusTotal shows ${vt.malicious ?? 0} malicious and ${vt.suspicious ?? 0} suspicious verdicts out of ${vt.total ?? 0} engines${
+          vt.categories && vt.categories.length
+            ? `, categorised as ${vt.categories.join(", ")}`
+            : ""
+        }. Treat it as hostile.`,
+        category: "phishing",
+      });
+    }
+    if (vt?.ok && vt.known === false) {
+      out.push({
+        id: `vt-unknown-${d.hostname}`,
+        severity: "medium",
+        weight: 10,
+        title: "No VirusTotal history for this domain",
+        detail: `${d.hostname} has never been analysed by VirusTotal. Real banks, brands, and government sites almost always have a record.`,
+        category: "phishing",
+      });
+    }
     if (d.urlhaus.ok && d.urlhaus.listed) {
       out.push({
         id: `intel-list-${d.hostname}`,
@@ -221,20 +398,34 @@ function indicatorsFrom(domains: DomainIntel[]): Indicator[] {
 }
 
 export const lookupIntel = createServerFn({ method: "POST" })
-  .inputValidator((input: { hostnames: string[] }) => ({
+  .inputValidator((input: { hostnames: string[]; urls?: string[] }) => ({
     hostnames: (input.hostnames ?? [])
       .map((h) => String(h).toLowerCase().replace(/\.$/, "").slice(0, 253))
       .filter(Boolean)
       .slice(0, 2),
+    urls: (input.urls ?? [])
+      .map((u) => String(u).slice(0, 2000))
+      .filter(Boolean)
+      .slice(0, 5),
   }))
   .handler(async ({ data }): Promise<IntelResult> => {
     if (data.hostnames.length === 0) {
       return { ok: true, domains: [], indicators: [] };
     }
 
+    const gsbUrls =
+      data.urls.length > 0
+        ? data.urls
+        : data.hostnames.map((h) => `http://${h}/`);
+    const safeBrowsing = await withTimeout(
+      6000,
+      (s) => lookupSafeBrowsing(gsbUrls, s),
+      { ok: false, configured: true, matches: {}, error: "timed out" },
+    );
+
     const domains = await Promise.all(
       data.hostnames.map(async (hostname) => {
-        const [rdap, urlhaus, dns] = await Promise.all([
+        const [rdap, urlhaus, dns, virustotal] = await Promise.all([
           withTimeout(6000, (s) => lookupRdap(hostname, s), {
             ok: false,
             error: "timed out",
@@ -249,8 +440,23 @@ export const lookupIntel = createServerFn({ method: "POST" })
             addresses: [],
             error: "timed out",
           }),
+          withTimeout(8000, (s) => lookupVirusTotal(hostname, s), {
+            ok: false,
+            configured: true,
+            error: "timed out",
+          } as VirusTotalIntel),
         ]);
-        return { hostname, rdap, urlhaus, dns };
+        const sb: SafeBrowsingIntel = safeBrowsing.configured
+          ? safeBrowsing.ok
+            ? { ok: true, configured: true, threats: safeBrowsing.matches[hostname] ?? [] }
+            : {
+                ok: false,
+                configured: true,
+                threats: [],
+                error: safeBrowsing.error ?? "Unavailable",
+              }
+          : { ok: false, configured: false, threats: [], error: "No API key" };
+        return { hostname, rdap, urlhaus, dns, virustotal, safeBrowsing: sb };
       }),
     );
 
