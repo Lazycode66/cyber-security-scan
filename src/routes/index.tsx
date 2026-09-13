@@ -1,24 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CheckPage } from "@/components/analyzer/check-page";
+import { SiteShell } from "@/components/site-shell";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+type Search = {
+  sample?: string | undefined;
+};
+
 export const Route = createFileRoute("/")({
-  component: Index,
+  validateSearch: (search: Record<string, unknown>): Search => ({
+    sample: typeof search["sample"] === "string" ? (search["sample"] as string) : undefined,
+  }),
+  head: () => ({
+    meta: [
+      { title: "Sentinel — Live Scam & Phishing Link Scanner" },
+      {
+        name: "description",
+        content:
+          "Paste a link, message, or app and Sentinel auto-scans it for phishing, scam scripts, and risky permissions with live registry, DNS, and malware-feed checks.",
+      },
+      { property: "og:title", content: "Sentinel — Live Scam & Phishing Link Scanner" },
+      {
+        property: "og:description",
+        content:
+          "Auto-scan any suspicious link or message and get an instant risk warning with the reasons behind it.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Home,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Home() {
+  const { sample } = Route.useSearch();
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <SiteShell current="check">
+      <CheckPage sampleId={sample} />
+    </SiteShell>
   );
 }
