@@ -9,11 +9,11 @@ const LINKS = [
 
 export function SiteHeader({ current }: { current: "check" | "learn" }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-bg/90 backdrop-blur-sm">
+    <header className="sticky top-0 z-20 border-b border-border bg-bg/80 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:h-16 sm:px-6">
         <Link
           to="/"
-          aria-label="Lantern home"
+          aria-label="Sentinel home"
           className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Wordmark />
