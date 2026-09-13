@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ShieldCheck, Undo2 } from "lucide-react";
+import { Guides } from "@/components/hub/guides";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -201,6 +202,10 @@ export function ClearedPage() {
           ))}
         </ul>
       )}
+
+      <div className="border-t border-border pt-10">
+        <Guides />
+      </div>
     </main>
   );
 }
