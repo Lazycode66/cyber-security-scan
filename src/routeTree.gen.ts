@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ClearedRouteImport } from './routes/cleared'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as LearnRouteImport } from './routes/learn'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClearedRoute = ClearedRouteImport.update({
+  id: '/cleared',
+  path: '/cleared',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -31,30 +37,34 @@ const LearnRoute = LearnRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cleared': typeof ClearedRoute
   '/history': typeof HistoryRoute
   '/learn': typeof LearnRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cleared': typeof ClearedRoute
   '/history': typeof HistoryRoute
   '/learn': typeof LearnRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cleared': typeof ClearedRoute
   '/history': typeof HistoryRoute
   '/learn': typeof LearnRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/history' | '/learn'
+  fullPaths: '/' | '/cleared' | '/history' | '/learn'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/history' | '/learn'
-  id: '__root__' | '/' | '/history' | '/learn'
+  to: '/' | '/cleared' | '/history' | '/learn'
+  id: '__root__' | '/' | '/cleared' | '/history' | '/learn'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ClearedRoute: typeof ClearedRoute
   HistoryRoute: typeof HistoryRoute
   LearnRoute: typeof LearnRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cleared': {
+      id: '/cleared'
+      path: '/cleared'
+      fullPath: '/cleared'
+      preLoaderRoute: typeof ClearedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ClearedRoute: ClearedRoute,
   HistoryRoute: HistoryRoute,
   LearnRoute: LearnRoute,
 }

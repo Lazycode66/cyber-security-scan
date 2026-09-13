@@ -89,8 +89,8 @@ export function Intake({
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="font-mono text-xs text-subtle">
-          Nothing is saved. Auto-scan runs locally, then checks the domain
-          against live public feeds.
+          Runs only when you press Check. The text stays on your device; the
+          domain is verified against live public feeds.
         </p>
         <Button type="submit" disabled={busy || disabled} className="w-full sm:w-auto">
           {busy ? "Checking…" : "Check this"}
