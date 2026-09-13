@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export function LanternMark({ className }: { className?: string }) {
+export function SentinelMark({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -9,28 +9,17 @@ export function LanternMark({ className }: { className?: string }) {
       aria-hidden="true"
     >
       <path
-        d="M9 8.5h6l-.85 9.2a2.2 2.2 0 0 1-2.18 2h-.14a2.2 2.2 0 0 1-2.18-2L9 8.5Z"
+        d="M12 2.75 4.75 5.4v6.2c0 4.2 2.9 8.1 7.25 9.65 4.35-1.55 7.25-5.45 7.25-9.65V5.4L12 2.75Z"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.4"
         strokeLinejoin="round"
       />
       <path
-        d="M9.2 8.5V7.2a2.8 2.8 0 0 1 5.6 0v1.3"
+        d="M8.4 12.4h2.1l1.1-2.6 1.3 4 1-1.4h1.7"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.4"
         strokeLinecap="round"
-      />
-      <path
-        d="M8 8.5h8"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 12.2v3.2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -39,9 +28,9 @@ export function LanternMark({ className }: { className?: string }) {
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2 text-fg", className)}>
-      <LanternMark className="size-5 text-accent" />
-      <span className="font-display text-lg font-medium tracking-tight">
-        Lantern
+      <SentinelMark className="size-5 text-accent" />
+      <span className="font-display text-lg font-semibold tracking-[0.16em] uppercase">
+        Sentinel
       </span>
     </span>
   );
