@@ -4,6 +4,16 @@ import { Quiz } from "@/components/hub/quiz";
 import { SiteShell } from "@/components/site-shell";
 
 export const Route = createFileRoute("/learn")({
+  head: () => ({
+    meta: [
+      { title: "Learn to Spot Scams — Sentinel" },
+      { name: "description", content: "Short guides, real examples, and a quick quiz on phishing, digital-arrest scams, OTP theft, and risky app permissions." },
+      { property: "og:title", content: "Learn to Spot Scams — Sentinel" },
+      { property: "og:description", content: "Guides, examples, and a quiz to help you pause before you tap." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Learn,
 });
 

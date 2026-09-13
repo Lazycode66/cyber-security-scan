@@ -85,7 +85,7 @@ export const SAMPLES: Sample[] = [
       kind: "app",
       text: "A flashlight from Google Play. Uses only the camera flash.",
       app: {
-        name: "Lantern Torch",
+        name: "Sentinel Torch",
         source: "play",
         permissions: [],
         claimedPurpose: "Flashlight",

@@ -28,7 +28,7 @@ import {
 } from "./url";
 
 const DISCLAIMER_STEPS_NOTE =
-  "Lantern is an awareness guide, not a forensic verdict. It can miss threats and can flag innocent messages.";
+  "Sentinel is an awareness guide, not a forensic verdict. It can miss threats and can flag innocent messages.";
 
 function push(list: Indicator[], item: Indicator) {
   if (list.some((i) => i.id === item.id)) return;

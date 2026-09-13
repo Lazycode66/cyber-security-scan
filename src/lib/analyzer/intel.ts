@@ -6,7 +6,7 @@ export type IntelResult =
   | { ok: false; error: string; domains: DomainIntel[]; indicators: Indicator[] };
 
 const RANK: Record<RiskLevel, number> = { low: 0, medium: 1, high: 2 };
-const UA = "LanternAwareness/1.0 (educational; +https://grok.com)";
+const UA = "SentinelAwareness/1.0 (educational)";
 
 function levelFromScore(score: number, indicators: Indicator[]): RiskLevel {
   if (indicators.some((i) => i.severity === "high" && i.weight >= 28)) {
