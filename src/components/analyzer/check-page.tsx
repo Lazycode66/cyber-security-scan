@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Radar, ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { ExamplesStrip } from "@/components/analyzer/examples-strip";
 import { Intake } from "@/components/analyzer/intake";
 import { Results } from "@/components/analyzer/results";
 import {
   analyze,
+  applyClearedHosts,
   applyIntel,
   getSample,
   lookupIntel,
@@ -13,6 +14,8 @@ import {
   type InputKind,
 } from "@/lib/analyzer";
 import { saveScan } from "@/lib/history";
+import { clearedHosts, markFalsePositive } from "@/lib/allowlist";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const EMPTY_APP: AppDetails = {
@@ -23,17 +26,6 @@ const EMPTY_APP: AppDetails = {
   developer: "",
 };
 
-const AUTO_DELAY = 700;
-
-/** Enough signal to be worth an automatic scan (a link, or a real chunk of text). */
-function autoScanReady(kind: InputKind, text: string) {
-  if (kind === "app") return false;
-  const value = text.trim();
-  if (value.length < 6) return false;
-  if (kind === "link") return /[a-z0-9-]+\.[a-z]{2,}/i.test(value);
-  return value.length >= 24;
-}
-
 export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
   const [kind, setKind] = useState<InputKind>("link");
   const [text, setText] = useState("");
@@ -42,12 +34,10 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [intelPending, setIntelPending] = useState(false);
   const [briefingNote, setBriefingNote] = useState<string | null>(null);
-  const [autoScan, setAutoScan] = useState(true);
-  const [autoQueued, setAutoQueued] = useState(false);
+  const [cleared, setCleared] = useState(false);
   const [activeSample, setActiveSample] = useState<string | null>(sampleId ?? null);
   const runId = useRef(0);
   const lastAuto = useRef<string | null>(null);
-  const lastScanned = useRef<string>("");
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const canRun = useMemo(() => {
@@ -62,33 +52,14 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sampleId]);
 
-  // Live watch: as soon as something scannable is typed or pasted, scan it.
-  useEffect(() => {
-    if (!autoScan) return;
-    const signature = `${kind}::${text.trim()}`;
-    if (!autoScanReady(kind, text) || lastScanned.current === signature) {
-      setAutoQueued(false);
-      return;
-    }
-    setAutoQueued(true);
-    const timer = setTimeout(() => {
-      lastScanned.current = signature;
-      setAutoQueued(false);
-      void runCheck(kind, text, app, { scroll: false });
-    }, AUTO_DELAY);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoScan, kind, text]);
-
-  function applySample(id: string, auto = false) {
+  function applySample(id: string, run = false) {
     const sample = getSample(id);
     if (!sample) return;
     setActiveSample(id);
     setKind(sample.kind);
     setText(sample.payload.text);
     setApp(sample.payload.app ?? EMPTY_APP);
-    lastScanned.current = `${sample.payload.kind}::${sample.payload.text.trim()}`;
-    if (auto) {
+    if (run) {
       void runCheck(
         sample.payload.kind,
         sample.payload.text,
@@ -113,6 +84,7 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
     setScanning(true);
     setBriefingNote(null);
     setAssessment(null);
+    setCleared(false);
     setIntelPending(false);
 
     const started = Date.now();
@@ -146,7 +118,6 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
     let final = local;
     if (intel) {
       final = applyIntel(local, intel);
-      setAssessment(final);
       if (intel.ok && intel.domains.length) {
         const checked = intel.domains[0];
         setBriefingNote(
@@ -156,53 +127,33 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
         );
       }
     }
+    const overridden = applyClearedHosts(final, clearedHosts());
+    setCleared(overridden !== final);
+    setAssessment(overridden);
     setIntelPending(false);
-    saveScan(final);
+    saveScan(overridden);
   }
 
   const alert =
     assessment && !scanning && assessment.level !== "low" ? assessment : null;
+  const flaggedHost = assessment?.urls[0]?.hostname ?? "";
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-12">
       <header className="max-w-2xl">
         <p className="font-mono text-xs font-medium tracking-[0.2em] text-accent uppercase">
-          // threat desk · live
+          // threat desk
         </p>
         <h1 className="mt-3 font-display text-4xl leading-tight font-semibold tracking-tight text-glow sm:text-5xl">
           Scan it before you tap.
         </h1>
         <p className="mt-4 max-w-xl text-base leading-relaxed text-muted">
-          Paste a link, message, or app. The scanner runs the moment it sees
-          something worth checking — phishing kits, digital-arrest scripts,
-          greedy permissions — then queries live registry, DNS, and public
-          malware feeds.
+          Paste a link, message, or app and press Check. Sentinel reads it for
+          phishing kits, digital-arrest scripts, and greedy permissions, then
+          confirms the domain against Google Safe Browsing, VirusTotal, the
+          registry, DNS, and public malware feeds before calling it risky.
         </p>
       </header>
-
-      <div className="flex flex-wrap items-center gap-3 rounded-lg bg-surface px-4 py-3 shadow-[var(--shadow-border)]">
-        <Radar
-          className={cn("size-4 text-accent", (autoQueued || scanning) && "pulse-soft")}
-          aria-hidden="true"
-        />
-        <p className="font-mono text-xs tracking-wide text-muted uppercase">
-          {autoScan
-            ? autoQueued
-              ? "auto-scan armed · reading input"
-              : scanning
-                ? "auto-scan running"
-                : "auto-scan on · watching input"
-            : "auto-scan off · manual only"}
-        </p>
-        <button
-          type="button"
-          onClick={() => setAutoScan((v) => !v)}
-          aria-pressed={autoScan}
-          className="ml-auto inline-flex h-8 items-center rounded-md border border-border-strong px-3 font-mono text-xs text-fg transition-colors hover:bg-elevated"
-        >
-          {autoScan ? "Disable" : "Enable"}
-        </button>
-      </div>
 
       {alert ? (
         <div
@@ -228,8 +179,33 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
               {alert.headline} Do not enter passwords, OTPs, or payment details
               until you verify through a channel you already trust.
             </p>
+            {flaggedHost ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => {
+                  markFalsePositive({
+                    host: flaggedHost,
+                    originalLevel: alert.level,
+                    originalScore: alert.score,
+                    headline: alert.headline,
+                  });
+                  void runCheck(kind, text, app, { scroll: false });
+                }}
+              >
+                This site is fine — mark false positive
+              </Button>
+            ) : null}
           </div>
         </div>
+      ) : null}
+
+      {cleared ? (
+        <p className="rounded-lg bg-surface px-4 py-3 font-mono text-xs tracking-wide text-subtle shadow-[var(--shadow-border)]">
+          on your cleared list · warnings suppressed for this address
+        </p>
       ) : null}
 
       <Intake
@@ -252,7 +228,6 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
         }}
         onSubmit={() => {
           if (!canRun) return;
-          lastScanned.current = `${kind}::${text.trim()}`;
           void runCheck();
         }}
       />

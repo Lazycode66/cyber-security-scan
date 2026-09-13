@@ -7,6 +7,7 @@ import type {
   SafeBrowsingIntel,
   VirusTotalIntel,
 } from "./types";
+import { softenWithEvidence } from "./trust";
 
 export type IntelResult =
   | { ok: true; domains: DomainIntel[]; indicators: Indicator[] }
