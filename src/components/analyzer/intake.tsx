@@ -88,9 +88,9 @@ export function Intake({
       </Tabs>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-subtle">
-          Nothing is saved. A deeper briefing may use an AI model on this
-          session only.
+        <p className="font-mono text-xs text-subtle">
+          Nothing is saved. Auto-scan runs locally, then checks the domain
+          against live public feeds.
         </p>
         <Button type="submit" disabled={busy || disabled} className="w-full sm:w-auto">
           {busy ? "Checking…" : "Check this"}
