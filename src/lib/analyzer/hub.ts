@@ -173,6 +173,7 @@ export const REPORT_CHANNELS = [
     items: [
       { name: "National Cyber Crime Portal", href: "https://cybercrime.gov.in" },
       { name: "Helpline 1930", href: "tel:1930" },
+      { name: "CERT-In (Indian CERT)", href: "https://www.cert-in.org.in" },
     ],
   },
   {
@@ -187,6 +188,15 @@ export const REPORT_CHANNELS = [
     items: [
       { name: "Google phishing report", href: "https://safebrowsing.google.com/safebrowsing/report_phish/" },
       { name: "PayPal spoof@paypal.com", href: "mailto:spoof@paypal.com" },
+    ],
+  },
+  {
+    region: "Global",
+    items: [
+      {
+        name: "Anti-Phishing Working Group",
+        href: "mailto:reportphishing@apwg.org",
+      },
     ],
   },
 ];
