@@ -221,7 +221,7 @@ function indicatorsFrom(domains: DomainIntel[]): Indicator[] {
 }
 
 export const lookupIntel = createServerFn({ method: "POST" })
-  .validator((input: { hostnames: string[] }) => ({
+  .inputValidator((input: { hostnames: string[] }) => ({
     hostnames: (input.hostnames ?? [])
       .map((h) => String(h).toLowerCase().replace(/\.$/, "").slice(0, 253))
       .filter(Boolean)
