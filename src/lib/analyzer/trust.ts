@@ -41,9 +41,11 @@ export function looksReputable(domain: DomainIntel): boolean {
       (vt.harmless ?? 0) >= 5,
   );
   const notListed = !(domain.urlhaus.ok && domain.urlhaus.listed);
-  const established = Boolean(
-    domain.rdap.ok && (domain.rdap.ageDays ?? 0) >= 365,
-  );
+  // Registry lookups fail often (rate limits, unsupported TLDs). When RDAP is
+  // simply unavailable, a strong VirusTotal record is enough of a substitute.
+  const established =
+    (domain.rdap.ok && (domain.rdap.ageDays ?? 0) >= 365) ||
+    (!domain.rdap.ok && (vt?.harmless ?? 0) >= 30);
   const resolves = domain.dns.ok && domain.dns.addresses.length > 0;
 
   return (
