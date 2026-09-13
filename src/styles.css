@@ -141,16 +141,6 @@
   body {
     min-height: 100dvh;
     background-color: var(--color-bg);
-    background-image: var(--gradient-grid),
-      radial-gradient(
-        900px 480px at 50% -10%,
-        color-mix(in oklab, var(--color-accent) 12%, transparent),
-        transparent
-      );
-    background-size:
-      42px 42px,
-      42px 42px,
-      auto;
     color: var(--color-fg);
     font-family: var(--font-sans);
     line-height: 1.5;
@@ -172,25 +162,25 @@
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-accent) 32%, transparent);
+    background: color-mix(in oklab, var(--color-accent) 30%, transparent);
     color: var(--color-fg);
   }
 }
 
 @utility panel-neon {
-  box-shadow: var(--shadow-neon);
-  background-color: color-mix(in oklab, var(--color-surface) 88%, transparent);
-  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-border);
+  background-color: var(--color-surface);
 }
 
 @utility panel-alarm {
   box-shadow: var(--shadow-alarm);
-  background-color: color-mix(in oklab, var(--color-risk-high) 12%, var(--color-surface));
+  background-color: color-mix(in oklab, var(--color-risk-high) 8%, var(--color-surface));
 }
 
 @utility text-glow {
-  text-shadow: 0 0 18px color-mix(in oklab, var(--color-accent) 55%, transparent);
+  text-shadow: none;
 }
+
 
 @utility scanline {
   position: relative;
