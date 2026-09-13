@@ -50,6 +50,27 @@ export type AppDetails = {
   developer: string;
 };
 
+export type VirusTotalIntel = {
+  ok: boolean;
+  configured: boolean;
+  malicious?: number | undefined;
+  suspicious?: number | undefined;
+  harmless?: number | undefined;
+  undetected?: number | undefined;
+  total?: number | undefined;
+  reputation?: number | null | undefined;
+  categories?: string[] | undefined;
+  known?: boolean | undefined;
+  error?: string | undefined;
+};
+
+export type SafeBrowsingIntel = {
+  ok: boolean;
+  configured: boolean;
+  threats: string[];
+  error?: string | undefined;
+};
+
 export type DomainIntel = {
   hostname: string;
   rdap: {
@@ -72,6 +93,8 @@ export type DomainIntel = {
     addresses: string[];
     error?: string | undefined;
   };
+  virustotal?: VirusTotalIntel | undefined;
+  safeBrowsing?: SafeBrowsingIntel | undefined;
 };
 
 export type Assessment = {
