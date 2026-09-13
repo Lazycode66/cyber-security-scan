@@ -484,11 +484,11 @@ export function applyIntel(
   const nextLevel = levelFromScore(score, indicators);
   const level =
     RANK[nextLevel] > RANK[current.level] ? nextLevel : current.level;
-  return {
+  return softenWithEvidence({
     ...current,
     score,
     level,
     indicators,
     intel: intel.domains,
-  };
+  });
 }
