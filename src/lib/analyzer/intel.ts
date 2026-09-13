@@ -241,7 +241,8 @@ async function lookupSafeBrowsing(
   urls: string[],
   signal: AbortSignal,
 ): Promise<SafeBrowsingBatch> {
-  const key = process.env["GOOGLE_SAFE_BROWSING_API_KEY"];
+  const key =
+    process.env["GOOGLE_SAFE_BROWSING_API_KEY"] || process.env["GOOGLE_API_KEY"];
   if (!key) {
     return { ok: false, configured: false, matches: {}, error: "No API key" };
   }
