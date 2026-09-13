@@ -192,8 +192,8 @@ function LiveIntel({
   domains,
   pending,
 }: {
-  domains?: DomainIntel[];
-  pending?: boolean;
+  domains?: DomainIntel[] | undefined;
+  pending?: boolean | undefined;
 }) {
   if (pending && (!domains || domains.length === 0)) {
     return (

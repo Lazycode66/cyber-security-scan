@@ -33,7 +33,7 @@ function autoScanReady(kind: InputKind, text: string) {
   return value.length >= 24;
 }
 
-export function CheckPage({ sampleId }: { sampleId?: string }) {
+export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
   const [kind, setKind] = useState<InputKind>("link");
   const [text, setText] = useState("");
   const [app, setApp] = useState<AppDetails>(EMPTY_APP);

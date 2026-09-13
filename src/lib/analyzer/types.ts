@@ -54,23 +54,23 @@ export type DomainIntel = {
   hostname: string;
   rdap: {
     ok: boolean;
-    registrar?: string;
-    created?: string;
-    ageDays?: number | null;
-    nameservers?: string[];
-    error?: string;
+    registrar?: string | undefined;
+    created?: string | undefined;
+    ageDays?: number | null | undefined;
+    nameservers?: string[] | undefined;
+    error?: string | undefined;
   };
   urlhaus: {
     ok: boolean;
     listed: boolean;
-    threat?: string;
-    tags?: string[];
-    error?: string;
+    threat?: string | undefined;
+    tags?: string[] | undefined;
+    error?: string | undefined;
   };
   dns: {
     ok: boolean;
     addresses: string[];
-    error?: string;
+    error?: string | undefined;
   };
 };
 
@@ -84,11 +84,11 @@ export type Assessment = {
   steps: NextStep[];
   urls: NormalizedUrl[];
   inputPreview: string;
-  intel?: DomainIntel[];
+  intel?: DomainIntel[] | undefined;
 };
 
 export type AnalyzePayload = {
   kind: InputKind;
   text: string;
-  app?: AppDetails;
+  app?: AppDetails | undefined;
 };

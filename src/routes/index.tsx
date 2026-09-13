@@ -3,12 +3,12 @@ import { CheckPage } from "@/components/analyzer/check-page";
 import { SiteShell } from "@/components/site-shell";
 
 type Search = {
-  sample?: string;
+  sample?: string | undefined;
 };
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): Search => ({
-    sample: typeof search.sample === "string" ? search.sample : undefined,
+    sample: typeof search["sample"] === "string" ? (search["sample"] as string) : undefined,
   }),
   head: () => ({
     meta: [
