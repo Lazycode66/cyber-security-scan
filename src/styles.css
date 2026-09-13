@@ -5,67 +5,47 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CYBER THREAT DESK design system.
- * Terminal-dark surfaces, neon cyan signal, magenta/amber risk tones.
+ * Original Lantern design system: quiet dark surfaces, paper-calm accents.
  * All app colors live here as tokens — never hardcode colors in components.
  */
 
 @theme {
-  /* Core surfaces */
-  --color-bg: oklch(0.16 0.026 255);
-  --color-surface: oklch(0.21 0.03 254);
-  --color-elevated: oklch(0.26 0.036 254);
-  --color-fg: oklch(0.96 0.014 200);
-  --color-muted: oklch(0.74 0.03 210);
-  --color-subtle: oklch(0.62 0.04 205);
+  --color-bg: #0b0c0e;
+  --color-surface: #13151a;
+  --color-elevated: #1b1e25;
+  --color-fg: #e8eaee;
+  --color-muted: #8d929c;
+  --color-subtle: #6b707a;
+  --color-accent: #c5ccd6;
+  --color-accent-fg: #0b0c0e;
+  --color-accent-glow: #aab2bd;
+  --color-neon-lime: #7d9a82;
+  --color-border: color-mix(in oklab, var(--color-fg) 12%, transparent);
+  --color-border-strong: color-mix(in oklab, var(--color-fg) 22%, transparent);
+  --color-ring: color-mix(in oklab, var(--color-accent) 55%, transparent);
+  --color-risk-low: #7d9a82;
+  --color-risk-low-fg: #0b0c0e;
+  --color-risk-medium: #c49a78;
+  --color-risk-medium-fg: #0b0c0e;
+  --color-risk-high: #c57b74;
+  --color-risk-high-fg: #0b0c0e;
 
-  /* Neon signal */
-  --color-accent: oklch(0.86 0.17 190);
-  --color-accent-fg: oklch(0.17 0.03 255);
-  --color-accent-glow: oklch(0.72 0.19 188);
-  --color-neon-lime: oklch(0.88 0.21 138);
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Newsreader", "Iowan Old Style", "Palatino Linotype", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --color-border: color-mix(in oklab, var(--color-accent) 16%, transparent);
-  --color-border-strong: color-mix(in oklab, var(--color-accent) 34%, transparent);
-  --color-ring: color-mix(in oklab, var(--color-accent) 60%, transparent);
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
 
-  /* Risk scale */
-  --color-risk-low: oklch(0.84 0.19 150);
-  --color-risk-low-fg: oklch(0.18 0.03 255);
-  --color-risk-medium: oklch(0.84 0.17 82);
-  --color-risk-medium-fg: oklch(0.18 0.03 255);
-  --color-risk-high: oklch(0.7 0.24 15);
-  --color-risk-high-fg: oklch(0.98 0.01 250);
-
-  --font-sans: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
-  --font-display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-
-  --radius-xs: 3px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --radius-2xl: 26px;
-
-  --shadow-border: 0 0 0 1px color-mix(in oklab, var(--color-accent) 14%, transparent);
-  --shadow-border-hover: 0 0 0 1px color-mix(in oklab, var(--color-accent) 30%, transparent);
-  --shadow-soft: 0 18px 44px -26px oklch(0 0 0 / 0.8);
-  --shadow-neon: 0 0 0 1px color-mix(in oklab, var(--color-accent) 40%, transparent),
-    0 0 24px -6px color-mix(in oklab, var(--color-accent) 45%, transparent);
-  --shadow-alarm: 0 0 0 1px color-mix(in oklab, var(--color-risk-high) 55%, transparent),
-    0 0 30px -8px color-mix(in oklab, var(--color-risk-high) 55%, transparent);
-
-  --gradient-grid: linear-gradient(
-      to right,
-      color-mix(in oklab, var(--color-accent) 7%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--color-accent) 7%, transparent) 1px,
-      transparent 1px
-    );
+  --shadow-border: 0 0 0 1px color-mix(in oklab, var(--color-fg) 8%, transparent);
+  --shadow-border-hover: 0 0 0 1px color-mix(in oklab, var(--color-fg) 13%, transparent);
+  --shadow-soft: 0 18px 40px -24px rgb(0 0 0 / 0.55);
+  --shadow-neon: 0 0 0 1px color-mix(in oklab, var(--color-fg) 13%, transparent);
+  --shadow-alarm: 0 0 0 1px color-mix(in oklab, var(--color-risk-high) 40%, transparent);
 
   --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -74,6 +54,7 @@
   --motion-fast: 250ms;
   --motion-slow: 400ms;
 }
+
 
 /* shadcn semantic bridge so stock ui primitives stay themed */
 :root {
