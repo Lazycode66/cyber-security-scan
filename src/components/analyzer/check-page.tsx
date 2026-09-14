@@ -5,7 +5,6 @@ import { Intake } from "@/components/analyzer/intake";
 import { Results } from "@/components/analyzer/results";
 import {
   analyze,
-  applyClearedHosts,
   applyIntel,
   getSample,
   lookupIntel,
@@ -14,8 +13,6 @@ import {
   type InputKind,
 } from "@/lib/analyzer";
 import { saveScan } from "@/lib/history";
-import { clearedHosts, markFalsePositive } from "@/lib/allowlist";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const EMPTY_APP: AppDetails = {
@@ -34,7 +31,6 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [intelPending, setIntelPending] = useState(false);
   const [briefingNote, setBriefingNote] = useState<string | null>(null);
-  const [cleared, setCleared] = useState(false);
   const [activeSample, setActiveSample] = useState<string | null>(sampleId ?? null);
   const runId = useRef(0);
   const lastAuto = useRef<string | null>(null);
@@ -84,7 +80,6 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
     setScanning(true);
     setBriefingNote(null);
     setAssessment(null);
-    setCleared(false);
     setIntelPending(false);
 
     const started = Date.now();
@@ -127,16 +122,13 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
         );
       }
     }
-    const overridden = applyClearedHosts(final, clearedHosts());
-    setCleared(overridden !== final);
-    setAssessment(overridden);
+    setAssessment(final);
     setIntelPending(false);
-    saveScan(overridden);
+    saveScan(final);
   }
 
   const alert =
     assessment && !scanning && assessment.level !== "low" ? assessment : null;
-  const flaggedHost = assessment?.urls[0]?.hostname ?? "";
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-12">
@@ -179,33 +171,8 @@ export function CheckPage({ sampleId }: { sampleId?: string | undefined }) {
               {alert.headline} Do not enter passwords, OTPs, or payment details
               until you verify through a channel you already trust.
             </p>
-            {flaggedHost ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                onClick={() => {
-                  markFalsePositive({
-                    host: flaggedHost,
-                    originalLevel: alert.level,
-                    originalScore: alert.score,
-                    headline: alert.headline,
-                  });
-                  void runCheck(kind, text, app, { scroll: false });
-                }}
-              >
-                This site is fine — mark false positive
-              </Button>
-            ) : null}
           </div>
         </div>
-      ) : null}
-
-      {cleared ? (
-        <p className="rounded-lg bg-surface px-4 py-3 font-mono text-xs tracking-wide text-subtle shadow-[var(--shadow-border)]">
-          on your cleared list · warnings suppressed for this address
-        </p>
       ) : null}
 
       <Intake
