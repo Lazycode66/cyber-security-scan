@@ -2,12 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { Wordmark } from "@/components/logo";
 import { cn } from "@/lib/utils";
 
-export type Section = "check" | "history" | "cleared" | "learn";
+export type Section = "check" | "history" | "intel" | "learn";
 
 const LINKS = [
   { to: "/", key: "check", label: "Check" },
   { to: "/history", key: "history", label: "History" },
-  { to: "/cleared", key: "cleared", label: "Cleared" },
+  { to: "/intel", key: "intel", label: "Intel" },
   { to: "/learn", key: "learn", label: "Learn" },
 ] as const;
 
