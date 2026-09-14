@@ -77,6 +77,9 @@ export type DomainIntel = {
     ok: boolean;
     registrar?: string | undefined;
     created?: string | undefined;
+    updated?: string | undefined;
+    expires?: string | undefined;
+    country?: string | undefined;
     ageDays?: number | null | undefined;
     nameservers?: string[] | undefined;
     error?: string | undefined;
@@ -93,6 +96,15 @@ export type DomainIntel = {
     addresses: string[];
     error?: string | undefined;
   };
+  hosting?:
+    | {
+        ok: boolean;
+        ip?: string | undefined;
+        country?: string | undefined;
+        city?: string | undefined;
+        org?: string | undefined;
+      }
+    | undefined;
   virustotal?: VirusTotalIntel | undefined;
   safeBrowsing?: SafeBrowsingIntel | undefined;
 };

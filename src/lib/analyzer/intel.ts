@@ -73,9 +73,29 @@ async function lookupRdap(
     entities?: { roles?: string[]; vcardArray?: unknown[] }[];
     nameservers?: { ldhName?: string }[];
   };
-  const created = body.events?.find((e) =>
-    /registration|registered/i.test(e.eventAction ?? ""),
-  )?.eventDate;
+  const eventDate = (pattern: RegExp) =>
+    body.events?.find((e) => pattern.test(e.eventAction ?? ""))?.eventDate;
+  const created = eventDate(/registration|registered/i);
+  const updated = eventDate(/last changed|last update of rdap|reregistration/i);
+  const expires = eventDate(/expiration|expires/i);
+  let country: string | undefined;
+  if (Array.isArray(body.entities)) {
+    for (const ent of body.entities) {
+      const vcard = ent.vcardArray?.[1];
+      if (!Array.isArray(vcard)) continue;
+      const adr = vcard.find((row) => Array.isArray(row) && row[0] === "adr");
+      if (Array.isArray(adr)) {
+        const parts = adr[3];
+        if (Array.isArray(parts)) {
+          const last = parts.filter(Boolean).pop();
+          if (typeof last === "string" && last.trim()) {
+            country = last.trim();
+            break;
+          }
+        }
+      }
+    }
+  }
   let registrar = body.registrar;
   if (!registrar && Array.isArray(body.entities)) {
     const reg = body.entities.find((e) => e.roles?.includes("registrar"));
@@ -93,6 +113,9 @@ async function lookupRdap(
     ok: true,
     registrar,
     created,
+    updated,
+    expires,
+    country,
     ageDays: ageDays(created),
     nameservers,
   };
@@ -145,6 +168,31 @@ async function lookupMalware(
     listed,
     threat: listed ? (phish.listed ? "phishing list" : "urlscan malicious") : undefined,
     tags,
+  };
+}
+
+async function lookupHosting(
+  ip: string,
+  signal: AbortSignal,
+): Promise<DomainIntel["hosting"]> {
+  const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+    signal,
+    headers: { Accept: "application/json", "User-Agent": UA },
+  });
+  if (!res.ok) return { ok: false, ip };
+  const body = (await res.json()) as {
+    success?: boolean;
+    country?: string;
+    city?: string;
+    connection?: { org?: string; isp?: string };
+  };
+  if (body.success === false) return { ok: false, ip };
+  return {
+    ok: true,
+    ip,
+    country: body.country,
+    city: body.city,
+    org: body.connection?.org || body.connection?.isp,
   };
 }
 
@@ -458,7 +506,14 @@ export const lookupIntel = createServerFn({ method: "POST" })
                 error: safeBrowsing.error ?? "Unavailable",
               }
           : { ok: false, configured: false, threats: [], error: "No API key" };
-        return { hostname, rdap, urlhaus, dns, virustotal, safeBrowsing: sb };
+        const firstIp = dns.ok ? dns.addresses[0] : undefined;
+        const hosting = firstIp
+          ? await withTimeout(4000, (s) => lookupHosting(firstIp, s), {
+              ok: false,
+              ip: firstIp,
+            })
+          : undefined;
+        return { hostname, rdap, urlhaus, dns, hosting, virustotal, safeBrowsing: sb };
       }),
     );
 
