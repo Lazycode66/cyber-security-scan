@@ -105,25 +105,3 @@ export function softenWithEvidence(assessment: Assessment): Assessment {
       "Google Safe Browsing and VirusTotal know this domain and report no threats, the registration is well established, and it resolves normally. Nothing here matches a phishing pattern — still avoid entering codes or payments you were not expecting.",
   };
 }
-
-/** Force a result to low risk because the user marked it as a false positive. */
-export function applyClearedHosts(
-  assessment: Assessment,
-  cleared: Set<string>,
-): Assessment {
-  if (cleared.size === 0) return assessment;
-  const hosts = assessment.urls.map((u) => u.hostname).filter(Boolean);
-  if (hosts.length === 0 || !hosts.every((h) => cleared.has(h))) {
-    return assessment;
-  }
-  const indicators = assessment.indicators.map((i) => ({ ...i, weight: 0 }));
-  return {
-    ...assessment,
-    indicators,
-    score: 0,
-    level: "low",
-    headline: "You marked this one as safe.",
-    summary:
-      "This address is on your cleared list, so the warning is suppressed. Remove it from the Cleared page if you ever want the full scan back.",
-  };
-}
