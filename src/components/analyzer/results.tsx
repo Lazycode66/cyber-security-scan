@@ -3,6 +3,7 @@ import {
   CircleAlert,
   FileSearch,
   Globe,
+  History,
   ShieldCheck,
   ShieldQuestion,
 } from "lucide-react";
@@ -222,6 +223,7 @@ function LiveIntel({
         {domains.map((d) => (
           <li key={d.hostname}>
             <p className="font-mono text-xs text-fg">{d.hostname}</p>
+            <SiteHistory domain={d} />
             <dl className="mt-2 grid gap-2 sm:grid-cols-3">
               <IntelFact
                 label="Google Safe Browsing"
@@ -310,6 +312,77 @@ function LiveIntel({
         These feeds can miss brand-new threats and can be delayed. They are not
         a forensic verdict.
       </p>
+    </div>
+  );
+}
+
+function fmtDate(iso?: string | undefined) {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return null;
+  return new Date(t).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function humanAge(days?: number | null | undefined) {
+  if (days == null) return null;
+  if (days < 31) return `${days} day${days === 1 ? "" : "s"} old`;
+  if (days < 365) return `${Math.round(days / 30)} months old`;
+  const years = days / 365;
+  return `${years < 10 ? years.toFixed(1) : Math.round(years)} years old`;
+}
+
+function SiteHistory({ domain }: { domain: DomainIntel }) {
+  const created = fmtDate(domain.rdap.created);
+  const updated = fmtDate(domain.rdap.updated);
+  const expires = fmtDate(domain.rdap.expires);
+  const age = humanAge(domain.rdap.ageDays);
+  const place = [domain.hosting?.city, domain.hosting?.country]
+    .filter(Boolean)
+    .join(", ");
+  const rows: { label: string; value: string; warn?: boolean }[] = [];
+  rows.push({
+    label: "Created",
+    value: created
+      ? `${created}${age ? ` · ${age}` : ""}`
+      : domain.rdap.ok
+        ? "Registry hides the creation date"
+        : domain.rdap.error ?? "Registry unavailable",
+    warn: domain.rdap.ageDays != null && domain.rdap.ageDays <= 90,
+  });
+  if (updated) rows.push({ label: "Last changed", value: updated });
+  if (expires) rows.push({ label: "Expires", value: expires });
+  if (domain.rdap.registrar)
+    rows.push({ label: "Registered with", value: domain.rdap.registrar });
+  if (domain.rdap.country)
+    rows.push({ label: "Registered in", value: domain.rdap.country });
+  if (place || domain.hosting?.org)
+    rows.push({
+      label: "Hosted",
+      value: [place, domain.hosting?.org].filter(Boolean).join(" · "),
+    });
+  if (domain.rdap.nameservers && domain.rdap.nameservers.length > 0)
+    rows.push({
+      label: "Name servers",
+      value: domain.rdap.nameservers.join(", "),
+    });
+
+  return (
+    <div className="mt-2 rounded-md bg-surface px-3 py-2">
+      <div className="flex items-center gap-2">
+        <History className="size-3.5 text-subtle" />
+        <p className="text-[11px] font-medium tracking-wide text-subtle uppercase">
+          Site history
+        </p>
+      </div>
+      <dl className="mt-2 grid gap-2 sm:grid-cols-3">
+        {rows.map((r) => (
+          <IntelFact key={r.label} label={r.label} value={r.value} {...(r.warn ? { warn: true } : {})} />
+        ))}
+      </dl>
     </div>
   );
 }
