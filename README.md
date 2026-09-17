@@ -22,3 +22,31 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Deploying from GitHub
+
+This app has a server side (the scanner calls Google Safe Browsing, VirusTotal
+and the domain registry from the server). GitHub Pages can only host static
+files, so a Pages deploy will always break those checks — that is why the API
+calls stopped working. The included workflow deploys to Cloudflare Workers
+instead, which runs both the pages and the server code.
+
+One-time setup:
+
+1. Create a free Cloudflare account.
+2. In GitHub: **Settings → Secrets and variables → Actions → New repository secret**,
+   and add:
+   - `CLOUDFLARE_API_TOKEN` (Cloudflare dashboard → My Profile → API Tokens →
+     "Edit Cloudflare Workers" template)
+   - `CLOUDFLARE_ACCOUNT_ID` (Cloudflare dashboard → Workers & Pages, right sidebar)
+   - `GOOGLE_API_KEY`
+   - `GOOGLE_SAFE_BROWSING_API_KEY`
+   - `VIRUSTOTAL_API_KEY`
+3. Push to `main`. The workflow builds the app, uploads the three scanner keys
+   as Worker secrets, and publishes the site.
+
+Make sure the **Safe Browsing API** is enabled in the Google Cloud project that
+owns the key, otherwise Google returns an error and only VirusTotal results show.
+
+Running locally: copy `.env.example` to `.env`, fill in the three keys, then
+`npm run dev`.

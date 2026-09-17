@@ -1,0 +1,13 @@
+name = "sentinel-scan"
+main = "dist/server/index.mjs"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "dist/client"
+binding = "ASSETS"
+
+# Secrets are NOT stored here. Set them once with:
+#   npx wrangler secret put GOOGLE_API_KEY
+#   npx wrangler secret put GOOGLE_SAFE_BROWSING_API_KEY
+#   npx wrangler secret put VIRUSTOTAL_API_KEY
